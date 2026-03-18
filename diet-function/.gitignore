@@ -48,3 +48,6 @@ __pycache__/
 __blobstorage__
 __queuestorage__
 __azurite_db*__.json
+
+# Ignore the .idea folder for JetBrains IDE configuration files
+.idea/
