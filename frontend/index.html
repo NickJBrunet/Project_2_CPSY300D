@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diet Analytics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loader">
+  <div class="loader-title">NutriLens</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-sub" id="loader-msg">Connecting to Azure Function…</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">Nutri<span>Lens</span></div>
+  <div class="header-meta">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Connecting…</span>
+    <div class="exec-badge" id="exec-time">— ms</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ERROR BANNER -->
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <h1 class="hero-title">
+        Diet Analysis<br><span class="line2">Dashboard</span>
+      </h1>
+      <p class="hero-sub">
+        Macronutrient intelligence across 5 diet types and 7,806 recipes —
+        powered by an Azure Serverless Function reading from Azure Blob Storage.
+      </p>
+    </div>
+    <div class="hero-actions">
+      <button class="btn-refresh" id="btn-refresh" onclick="loadData()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+        Refresh Data
+      </button>
+      <div class="source-note" id="data-source">Source: embedded fallback</div>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <span class="filter-label">Diet Filter</span>
+    <button class="filter-btn active" data-diet="all" onclick="setFilter('all')">All Diets</button>
+    <button class="filter-btn" data-diet="dash"   onclick="setFilter('dash')">Dash</button>
+    <button class="filter-btn" data-diet="keto"   onclick="setFilter('keto')">Keto</button>
+    <button class="filter-btn" data-diet="mediterranean" onclick="setFilter('mediterranean')">Mediterranean</button>
+    <button class="filter-btn" data-diet="paleo"  onclick="setFilter('paleo')">Paleo</button>
+    <button class="filter-btn" data-diet="vegan"  onclick="setFilter('vegan')">Vegan</button>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-strip" id="kpi-strip">
+    <div class="kpi"><div class="kpi-label">Total Recipes</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub">across all diet types</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Protein (g)</div><div class="kpi-value" id="kpi-protein">—</div><div class="kpi-sub">per recipe</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Carbs (g)</div><div class="kpi-value" id="kpi-carbs">—</div><div class="kpi-sub">per recipe</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Fat (g)</div><div class="kpi-value" id="kpi-fat">—</div><div class="kpi-sub">per recipe</div></div>
+    <div class="kpi"><div class="kpi-label">Diet Types</div><div class="kpi-value" id="kpi-diets">—</div><div class="kpi-sub">categories analyzed</div></div>
+  </div>
+
+  <!-- ROW 1 -->
+  <div class="section-label">Macronutrient Overview</div>
+  <div class="grid" style="margin-bottom:1.5rem">
+
+    <!-- Chart 1: Grouped Bar -->
+    <div class="card col-8">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Average Macronutrients per Diet Type</div>
+          <div class="card-desc">Mean protein, carbohydrates and fat (g) per recipe for each diet category</div>
+        </div>
+        <span class="chart-tag">BAR CHART</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          <canvas id="barChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 2: Donut — recipe counts -->
+    <div class="card col-4">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Recipe Distribution</div>
+          <div class="card-desc">Number of recipes per diet type in the dataset</div>
+        </div>
+        <span class="chart-tag">DONUT</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap" style="min-height:200px">
+          <canvas id="donutChart"></canvas>
+        </div>
+        <div class="donut-legend" id="donut-legend"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 2 -->
+  <div class="section-label">Nutritional Ratios & Patterns</div>
+  <div class="grid" style="margin-bottom:1.5rem">
+
+    <!-- Chart 3: Horizontal bar — protein:carb ratio -->
+    <div class="card col-6">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Protein-to-Carbs Ratio</div>
+          <div class="card-desc">Higher ratio = more protein-dense relative to carbohydrates</div>
+        </div>
+        <span class="chart-tag">HORIZONTAL BAR</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          <canvas id="ratioChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 4: Radar -->
+    <div class="card col-6">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Macronutrient Profile Radar</div>
+          <div class="card-desc">Normalised comparison of all three macros across diet types</div>
+        </div>
+        <span class="chart-tag">RADAR</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          <canvas id="radarChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 3: Table -->
+  <div class="section-label">Top Protein-Rich Recipes</div>
+  <div class="grid">
+    <div class="card col-12">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Top 3 Highest-Protein Recipes per Diet</div>
+          <div class="card-desc">Ranked by protein content (g) — sorted descending within each diet type</div>
+        </div>
+        <span class="chart-tag">DATA TABLE</span>
+      </div>
+      <div class="card-body" style="padding-top:0.75rem">
+        <div style="overflow-x:auto">
+          <table class="data-table" id="protein-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Diet Type</th>
+                <th>Recipe Name</th>
+                <th>Cuisine</th>
+                <th>Protein (g)</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Scripts -->
+<script src="script.js" ></script>      <!--- defer attribute if code breaks-->>
+
+</body>
+</html>
