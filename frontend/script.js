@@ -69,18 +69,103 @@ const DIET_LABELS = {
   dash:'DASH', keto:'Keto', mediterranean:'Mediterranean', paleo:'Paleo', vegan:'Vegan'
 };
 
+// ─── NORMALIZE BACKEND DATA ───────────────────────────────────────────
+function normalizeBackendData(raw) {
+  const avg_macros = Array.isArray(raw?.avg_macros) ? raw.avg_macros : [];
+
+  const normalizedAvgMacros = avg_macros.map(d => ({
+    Diet_type: d.Diet_type,
+    "Protein(g)": Number(d["Protein(g)"]) || 0,
+    "Carbs(g)": Number(d["Carbs(g)"]) || 0,
+    "Fat(g)": Number(d["Fat(g)"]) || 0
+  }));
+
+  const protein_carb_ratio = Array.isArray(raw?.protein_carb_ratio) && raw.protein_carb_ratio.length
+    ? raw.protein_carb_ratio.map(d => ({
+        Diet_type: d.Diet_type,
+        Protein_to_Carbs_ratio: Number(d.Protein_to_Carbs_ratio) || 0
+      }))
+    : normalizedAvgMacros.map(d => ({
+        Diet_type: d.Diet_type,
+        Protein_to_Carbs_ratio: d["Carbs(g)"] ? Number((d["Protein(g)"] / d["Carbs(g)"]).toFixed(2)) : 0
+      }));
+
+  const recipe_counts = Array.isArray(raw?.recipe_counts) && raw.recipe_counts.length
+    ? raw.recipe_counts.map(d => ({
+        Diet_type: d.Diet_type,
+        recipe_count: Number(d.recipe_count) || 0
+      }))
+    : (() => {
+        const cuisines = Array.isArray(raw?.most_common_cuisines) ? raw.most_common_cuisines : [];
+        if (cuisines.length) {
+          const totals = {};
+          cuisines.forEach(d => {
+            const key = d.Diet_type;
+            totals[key] = (totals[key] || 0) + (Number(d.count) || 0);
+          });
+          return Object.entries(totals).map(([Diet_type, recipe_count]) => ({
+            Diet_type,
+            recipe_count
+          }));
+        }
+
+        const recipes = Array.isArray(raw?.top_protein_recipes) ? raw.top_protein_recipes : [];
+        if (recipes.length) {
+          const totals = {};
+          recipes.forEach(d => {
+            const key = d.Diet_type;
+            totals[key] = (totals[key] || 0) + 1;
+          });
+          return Object.entries(totals).map(([Diet_type, recipe_count]) => ({
+            Diet_type,
+            recipe_count
+          }));
+        }
+
+        return normalizedAvgMacros.map(d => ({
+          Diet_type: d.Diet_type,
+          recipe_count: 0
+        }));
+      })();
+
+  const top_protein_recipes = Array.isArray(raw?.top_protein_recipes)
+    ? raw.top_protein_recipes.map(d => ({
+        ...d,
+        "Protein(g)": Number(d["Protein(g)"]) || 0,
+        "Carbs(g)": Number(d["Carbs(g)"]) || 0,
+        "Fat(g)": Number(d["Fat(g)"]) || 0
+      }))
+    : [];
+
+  const metadataSource = raw?.metadata || {};
+  const summarySource = raw?.summary || {};
+
+  return {
+    metadata: {
+      ...metadataSource,
+      total_records: metadataSource.total_records ?? summarySource.total_records ?? 0,
+      diet_types: metadataSource.diet_types ?? summarySource.diet_types ?? normalizedAvgMacros.map(d => d.Diet_type)
+    },
+    avg_macros: normalizedAvgMacros,
+    protein_carb_ratio,
+    recipe_counts,
+    top_protein_recipes
+  };
+}
+
 // ─── LOAD DATA ────────────────────────────────────────────────────────
 async function loadData() {
   showLoader(true);
   let data = null;
-  let usedFallback = false;
 
-  // Try Azure Function first
-  if (!AZURE_FUNCTION_URL.includes("YOUR_FUNCTION_APP")) {
+  if (AZURE_FUNCTION_URL) {
     try {
       const res = await fetch(AZURE_FUNCTION_URL, { signal: AbortSignal.timeout(8000) });
+
       if (res.ok) {
-        data = await res.json();
+        const raw = await res.json();
+        data = normalizeBackendData(raw);
+
         document.getElementById('data-source').textContent = 'Source: Azure Function (live)';
         setStatus(true, `Azure · ${data.metadata?.execution_time_ms || '—'}ms`);
         document.getElementById('exec-time').textContent = `${data.metadata?.execution_time_ms || '—'} ms`;
@@ -92,7 +177,6 @@ async function loadData() {
 
   if (!data) {
     data = FALLBACK;
-    usedFallback = true;
     document.getElementById('data-source').textContent = 'Source: Embedded dataset fallback';
     setStatus(false, 'Embedded data');
     document.getElementById('exec-time').textContent = '< 1 ms';
