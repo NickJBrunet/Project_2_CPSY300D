@@ -35,7 +35,7 @@ jobs:
           source venv/bin/activate
 
       - name: Install dependencies
-        run: pip install -r diet-funtion/requirements.txt
+        run: pip install -r diet-function/requirements.txt
 
       # Optional: Add step to run tests here
 
