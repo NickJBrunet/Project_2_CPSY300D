@@ -12,6 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Inject environment variables
+        run: |
+          echo "const CONFIG = { BACKEND_URL: '${{ vars.BACKEND_URL }}' };" > frontend/config.js
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:

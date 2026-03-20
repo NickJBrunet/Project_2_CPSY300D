@@ -1,55 +1,57 @@
 // ─── CONFIG ───────────────────────────────────────────────────────────
 // Placeholder URL for Azure Function; replace with your actual function URL if deployed
-const AZURE_FUNCTION_URL = "https://YOUR_FUNCTION_APP.azurewebsites.net/api/diet-analysis";
+const AZURE_FUNCTION_URL = CONFIG?.BACKEND_URL
+  ? CONFIG.BACKEND_URL + "/api/process_diet_data"
+  : null;
 
 // ─── EMBEDDED FALLBACK DATA (from data_analysis.py on All_Diets.csv) ──
-const FALLBACK = {
-  metadata: {
-    function_name: "diet-analysis-fn",
-    total_records: 7806,
-    diet_types: ["dash","keto","mediterranean","paleo","vegan"],
-    execution_time_ms: 0,
-    dataset: "All_Diets.csv (embedded)"
-  },
-  avg_macros: [
-    {"Diet_type":"dash",          "Protein(g)":69.3,  "Carbs(g)":160.5, "Fat(g)":101.2},
-    {"Diet_type":"keto",          "Protein(g)":101.3, "Carbs(g)":58.0,  "Fat(g)":153.1},
-    {"Diet_type":"mediterranean", "Protein(g)":101.1, "Carbs(g)":152.9, "Fat(g)":101.4},
-    {"Diet_type":"paleo",         "Protein(g)":88.7,  "Carbs(g)":129.6, "Fat(g)":135.7},
-    {"Diet_type":"vegan",         "Protein(g)":56.2,  "Carbs(g)":254.0, "Fat(g)":103.3}
-  ],
-  protein_carb_ratio: [
-    {"Diet_type":"dash",          "Protein_to_Carbs_ratio":1.49},
-    {"Diet_type":"keto",          "Protein_to_Carbs_ratio":4.12},
-    {"Diet_type":"mediterranean", "Protein_to_Carbs_ratio":1.78},
-    {"Diet_type":"paleo",         "Protein_to_Carbs_ratio":2.06},
-    {"Diet_type":"vegan",         "Protein_to_Carbs_ratio":0.33}
-  ],
-  recipe_counts: [
-    {"Diet_type":"dash","recipe_count":1745},
-    {"Diet_type":"keto","recipe_count":1512},
-    {"Diet_type":"mediterranean","recipe_count":1753},
-    {"Diet_type":"paleo","recipe_count":1274},
-    {"Diet_type":"vegan","recipe_count":1522}
-  ],
-  top_protein_recipes: [
-    {"Diet_type":"paleo",         "Recipe_name":"Swiss Paleo's Homemade Italian & Chorizo Sausage","Protein(g)":1273.6,"Cuisine_type":"italian"},
-    {"Diet_type":"dash",          "Recipe_name":"Salmon Mousse","Protein(g)":1239.5,"Cuisine_type":"nordic"},
-    {"Diet_type":"dash",          "Recipe_name":"Homemade Turkey Alphabet Soup","Protein(g)":1190.4,"Cuisine_type":"american"},
-    {"Diet_type":"paleo",         "Recipe_name":"Turkey Soup","Protein(g)":1142.6,"Cuisine_type":"american"},
-    {"Diet_type":"keto",          "Recipe_name":"Sara Louise's Keto Smoked Holiday Turkey","Protein(g)":1092.0,"Cuisine_type":"american"},
-    {"Diet_type":"dash",          "Recipe_name":"Barbecue Chicken Legs","Protein(g)":1017.2,"Cuisine_type":"mediterranean"},
-    {"Diet_type":"mediterranean", "Recipe_name":"Fava Bean Salad with Mountain Ham and Mint","Protein(g)":970.3,"Cuisine_type":"american"},
-    {"Diet_type":"keto",          "Recipe_name":"Mayo Free Deviled Eggs (Paleo, Whole30 + Keto)","Protein(g)":767.0,"Cuisine_type":"italian"},
-    {"Diet_type":"keto",          "Recipe_name":"Low Carb Beef and Cheddar Cauliflower Bake","Protein(g)":710.8,"Cuisine_type":"british"},
-    {"Diet_type":"paleo",         "Recipe_name":"Orange and Five-Spice Roasted Chicken Legs","Protein(g)":677.2,"Cuisine_type":"mediterranean"},
-    {"Diet_type":"mediterranean", "Recipe_name":"Poached Salt Cod with Vegetables","Protein(g)":656.6,"Cuisine_type":"mediterranean"},
-    {"Diet_type":"mediterranean", "Recipe_name":"Mediterranean Pizza","Protein(g)":628.3,"Cuisine_type":"italian"},
-    {"Diet_type":"vegan",         "Recipe_name":"Tangy Teriyaki Salmon","Protein(g)":431.1,"Cuisine_type":"nordic"},
-    {"Diet_type":"vegan",         "Recipe_name":"Mini Nut Roasts with Candied Carrots","Protein(g)":421.7,"Cuisine_type":"american"},
-    {"Diet_type":"vegan",         "Recipe_name":"Vegan Pinto Bean Chili","Protein(g)":381.6,"Cuisine_type":"american"}
-  ]
-};
+const FALLBACK = {}
+//   metadata: {
+//     function_name: "diet-analysis-fn",
+//     total_records: 7806,
+//     diet_types: ["dash","keto","mediterranean","paleo","vegan"],
+//     execution_time_ms: 0,
+//     dataset: "All_Diets.csv (embedded)"
+//   },
+//   avg_macros: [
+//     {"Diet_type":"dash",          "Protein(g)":69.3,  "Carbs(g)":160.5, "Fat(g)":101.2},
+//     {"Diet_type":"keto",          "Protein(g)":101.3, "Carbs(g)":58.0,  "Fat(g)":153.1},
+//     {"Diet_type":"mediterranean", "Protein(g)":101.1, "Carbs(g)":152.9, "Fat(g)":101.4},
+//     {"Diet_type":"paleo",         "Protein(g)":88.7,  "Carbs(g)":129.6, "Fat(g)":135.7},
+//     {"Diet_type":"vegan",         "Protein(g)":56.2,  "Carbs(g)":254.0, "Fat(g)":103.3}
+//   ],
+//   protein_carb_ratio: [
+//     {"Diet_type":"dash",          "Protein_to_Carbs_ratio":1.49},
+//     {"Diet_type":"keto",          "Protein_to_Carbs_ratio":4.12},
+//     {"Diet_type":"mediterranean", "Protein_to_Carbs_ratio":1.78},
+//     {"Diet_type":"paleo",         "Protein_to_Carbs_ratio":2.06},
+//     {"Diet_type":"vegan",         "Protein_to_Carbs_ratio":0.33}
+//   ],
+//   recipe_counts: [
+//     {"Diet_type":"dash","recipe_count":1745},
+//     {"Diet_type":"keto","recipe_count":1512},
+//     {"Diet_type":"mediterranean","recipe_count":1753},
+//     {"Diet_type":"paleo","recipe_count":1274},
+//     {"Diet_type":"vegan","recipe_count":1522}
+//   ],
+//   top_protein_recipes: [
+//     {"Diet_type":"paleo",         "Recipe_name":"Swiss Paleo's Homemade Italian & Chorizo Sausage","Protein(g)":1273.6,"Cuisine_type":"italian"},
+//     {"Diet_type":"dash",          "Recipe_name":"Salmon Mousse","Protein(g)":1239.5,"Cuisine_type":"nordic"},
+//     {"Diet_type":"dash",          "Recipe_name":"Homemade Turkey Alphabet Soup","Protein(g)":1190.4,"Cuisine_type":"american"},
+//     {"Diet_type":"paleo",         "Recipe_name":"Turkey Soup","Protein(g)":1142.6,"Cuisine_type":"american"},
+//     {"Diet_type":"keto",          "Recipe_name":"Sara Louise's Keto Smoked Holiday Turkey","Protein(g)":1092.0,"Cuisine_type":"american"},
+//     {"Diet_type":"dash",          "Recipe_name":"Barbecue Chicken Legs","Protein(g)":1017.2,"Cuisine_type":"mediterranean"},
+//     {"Diet_type":"mediterranean", "Recipe_name":"Fava Bean Salad with Mountain Ham and Mint","Protein(g)":970.3,"Cuisine_type":"american"},
+//     {"Diet_type":"keto",          "Recipe_name":"Mayo Free Deviled Eggs (Paleo, Whole30 + Keto)","Protein(g)":767.0,"Cuisine_type":"italian"},
+//     {"Diet_type":"keto",          "Recipe_name":"Low Carb Beef and Cheddar Cauliflower Bake","Protein(g)":710.8,"Cuisine_type":"british"},
+//     {"Diet_type":"paleo",         "Recipe_name":"Orange and Five-Spice Roasted Chicken Legs","Protein(g)":677.2,"Cuisine_type":"mediterranean"},
+//     {"Diet_type":"mediterranean", "Recipe_name":"Poached Salt Cod with Vegetables","Protein(g)":656.6,"Cuisine_type":"mediterranean"},
+//     {"Diet_type":"mediterranean", "Recipe_name":"Mediterranean Pizza","Protein(g)":628.3,"Cuisine_type":"italian"},
+//     {"Diet_type":"vegan",         "Recipe_name":"Tangy Teriyaki Salmon","Protein(g)":431.1,"Cuisine_type":"nordic"},
+//     {"Diet_type":"vegan",         "Recipe_name":"Mini Nut Roasts with Candied Carrots","Protein(g)":421.7,"Cuisine_type":"american"},
+//     {"Diet_type":"vegan",         "Recipe_name":"Vegan Pinto Bean Chili","Protein(g)":381.6,"Cuisine_type":"american"}
+//   ]
+// };
 
 // ─── STATE ────────────────────────────────────────────────────────────
 let globalData = null;
